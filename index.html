@@ -1,0 +1,940 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>gotozeros - 싸이월드 감성으로 돌아가</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --pink: #f472b6;
+    --pink-light: #fce7f3;
+    --purple: #a855f7;
+    --purple-dark: #7c3aed;
+    --bg: #fff0f8;
+    --card: #ffffff;
+    --text: #1e1e2e;
+    --gray: #6b7280;
+  }
+
+  body {
+    background: var(--bg);
+    font-family: 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
+    min-height: 100vh;
+    color: var(--text);
+  }
+
+  /* ── 헤더 ── */
+  header {
+    text-align: center;
+    padding: 28px 16px 20px;
+    background: linear-gradient(135deg, #fce7f3 0%, #ede9fe 100%);
+    border-bottom: 2px solid #f9a8d4;
+  }
+  header h1 {
+    font-size: 2rem;
+    font-weight: 900;
+    letter-spacing: -1px;
+    background: linear-gradient(135deg, #ec4899, #8b5cf6);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  header p {
+    margin-top: 6px;
+    font-size: 0.9rem;
+    color: var(--gray);
+  }
+
+  /* ── 업로드 화면 ── */
+  #upload-screen {
+    max-width: 480px;
+    margin: 40px auto;
+    padding: 0 16px;
+    text-align: center;
+  }
+
+  #drop-zone {
+    border: 3px dashed #f9a8d4;
+    border-radius: 24px;
+    padding: 60px 24px;
+    background: white;
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+  }
+  #drop-zone:hover, #drop-zone.drag-over {
+    border-color: var(--purple);
+    background: #faf5ff;
+    transform: scale(1.01);
+  }
+  #drop-zone input[type=file] {
+    position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%;
+  }
+  #drop-zone .icon { font-size: 3.5rem; margin-bottom: 16px; }
+  #drop-zone h2 { font-size: 1.3rem; font-weight: 700; color: var(--text); margin-bottom: 8px; }
+  #drop-zone p { font-size: 0.85rem; color: var(--gray); }
+  #drop-zone .btn-upload {
+    display: inline-block;
+    margin-top: 20px;
+    padding: 12px 32px;
+    background: linear-gradient(135deg, #ec4899, #8b5cf6);
+    color: white;
+    border-radius: 999px;
+    font-size: 1rem;
+    font-weight: 700;
+    pointer-events: none;
+    box-shadow: 0 4px 15px rgba(236,72,153,0.4);
+  }
+
+  .sample-hint {
+    margin-top: 20px;
+    font-size: 0.8rem;
+    color: #aaa;
+  }
+
+  /* ── 결과 화면 ── */
+  #result-screen {
+    display: none;
+    max-width: 520px;
+    margin: 0 auto;
+    padding: 0 16px 80px;
+  }
+
+  .back-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin: 16px 0;
+    font-size: 0.9rem;
+    color: var(--purple-dark);
+    cursor: pointer;
+    font-weight: 600;
+    background: none;
+    border: none;
+  }
+  .back-btn:hover { opacity: 0.7; }
+
+  /* 비교 영역 */
+  .compare-wrap {
+    position: relative;
+    margin-bottom: 16px;
+  }
+
+  /* 필터 결과 — 크게 */
+  .compare-card-main {
+    background: white;
+    border-radius: 20px;
+    overflow: hidden;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.12);
+  }
+  .compare-label {
+    text-align: center;
+    font-size: 0.78rem;
+    font-weight: 700;
+    padding: 8px 0;
+    color: var(--gray);
+    background: #f9fafb;
+    border-bottom: 1px solid #f0f0f0;
+  }
+  .compare-label.filtered { color: var(--purple-dark); background: #faf5ff; }
+  #filtered-canvas {
+    width: 100%;
+    max-height: 480px;
+    object-fit: contain;
+    display: block;
+    background: #111;
+  }
+
+  /* 원본 — 우하단 작은 썸네일 */
+  .compare-card-thumb {
+    position: absolute;
+    bottom: 10px;
+    right: 10px;
+    width: 90px;
+    background: white;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 3px 12px rgba(0,0,0,0.25);
+    border: 2px solid white;
+  }
+  .compare-label-thumb {
+    text-align: center;
+    font-size: 0.65rem;
+    font-weight: 700;
+    padding: 4px 0;
+    color: var(--gray);
+    background: #f9fafb;
+  }
+  .compare-card-thumb img {
+    width: 100%;
+    aspect-ratio: 1;
+    object-fit: cover;
+    display: block;
+  }
+
+  /* 피부 보정 토글 */
+  .skin-section {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: white;
+    border-radius: 16px;
+    padding: 12px 16px;
+    margin-bottom: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  }
+  .skin-toggle {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: var(--gray);
+    cursor: pointer;
+    background: none;
+    border: none;
+    flex-shrink: 0;
+  }
+  .skin-toggle.on { color: var(--purple-dark); }
+  .toggle-pill {
+    width: 42px; height: 24px;
+    background: #d1d5db;
+    border-radius: 999px;
+    position: relative;
+    transition: background 0.2s;
+    flex-shrink: 0;
+  }
+  .toggle-pill.on { background: var(--purple); }
+  .toggle-pill::after {
+    content: '';
+    position: absolute;
+    top: 3px; left: 3px;
+    width: 18px; height: 18px;
+    background: white;
+    border-radius: 50%;
+    transition: transform 0.2s;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+  }
+  .toggle-pill.on::after { transform: translateX(18px); }
+  .skin-strength-wrap {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex: 1;
+  }
+  .skin-strength-wrap input[type=range] {
+    flex: 1;
+    accent-color: var(--purple);
+    height: 4px;
+  }
+  .skin-strength-wrap span {
+    font-size: 0.75rem;
+    color: var(--gray);
+    width: 28px;
+    text-align: right;
+  }
+  .skin-status {
+    font-size: 0.72rem;
+    color: var(--gray);
+    text-align: center;
+    margin-top: -6px;
+    margin-bottom: 10px;
+    min-height: 16px;
+  }
+
+  /* 필터 선택 */
+  .filter-section { margin-bottom: 16px; }
+  .filter-section-title {
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--gray);
+    margin-bottom: 10px;
+  }
+  .filter-list {
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    padding-bottom: 4px;
+    scrollbar-width: none;
+  }
+  .filter-list::-webkit-scrollbar { display: none; }
+  .filter-btn {
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
+    padding: 8px 14px;
+    background: white;
+    border: 2px solid #e5e7eb;
+    border-radius: 16px;
+    cursor: pointer;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--gray);
+    transition: all 0.15s;
+    white-space: nowrap;
+  }
+  .filter-btn .emoji { font-size: 1.4rem; }
+  .filter-btn:hover { border-color: var(--pink); color: var(--purple-dark); }
+  .filter-btn.active {
+    border-color: var(--purple);
+    background: #faf5ff;
+    color: var(--purple-dark);
+    box-shadow: 0 2px 8px rgba(168,85,247,0.25);
+  }
+
+  /* 액션 버튼 */
+  .action-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 16px;
+  }
+  .btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 14px;
+    border-radius: 14px;
+    font-size: 0.95rem;
+    font-weight: 700;
+    cursor: pointer;
+    border: none;
+    transition: all 0.15s;
+  }
+  .btn-download {
+    background: linear-gradient(135deg, #ec4899, #8b5cf6);
+    color: white;
+    box-shadow: 0 4px 12px rgba(236,72,153,0.35);
+  }
+  .btn-download:hover { transform: translateY(-1px); box-shadow: 0 6px 16px rgba(236,72,153,0.4); }
+  .btn-share-main {
+    background: white;
+    color: var(--purple-dark);
+    border: 2px solid var(--purple);
+  }
+  .btn-share-main:hover { background: #faf5ff; }
+
+  /* 공유 패널 */
+  .share-panel {
+    background: white;
+    border-radius: 20px;
+    padding: 20px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+    margin-bottom: 16px;
+    display: none;
+  }
+  .share-panel.open { display: block; }
+  .share-panel-title {
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--gray);
+    margin-bottom: 14px;
+    text-align: center;
+  }
+  .share-text-box {
+    background: #f9fafb;
+    border-radius: 12px;
+    padding: 12px;
+    font-size: 0.82rem;
+    color: #555;
+    line-height: 1.6;
+    margin-bottom: 14px;
+    border: 1px solid #e5e7eb;
+  }
+  .share-btns {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+  }
+  .share-icon-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
+    padding: 10px 6px;
+    border-radius: 12px;
+    border: none;
+    cursor: pointer;
+    font-size: 0.72rem;
+    font-weight: 600;
+    transition: all 0.15s;
+  }
+  .share-icon-btn .s-icon { font-size: 1.6rem; }
+  .share-icon-btn:hover { transform: scale(1.05); }
+  .btn-kakao { background: #FEE500; color: #3A1D1D; }
+  .btn-insta { background: linear-gradient(135deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888); color: white; }
+  .btn-twitter { background: #1DA1F2; color: white; }
+  .btn-copy { background: #f3f4f6; color: #374151; }
+  .btn-copy.copied { background: #d1fae5; color: #065f46; }
+
+  /* 토스트 */
+  #toast {
+    position: fixed;
+    bottom: 30px;
+    left: 50%;
+    transform: translateX(-50%) translateY(60px);
+    background: #1e1e2e;
+    color: white;
+    padding: 12px 24px;
+    border-radius: 999px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    transition: transform 0.3s;
+    z-index: 999;
+    pointer-events: none;
+  }
+  #toast.show { transform: translateX(-50%) translateY(0); }
+
+  /* 로딩 */
+  .loading-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(255,240,248,0.85);
+    z-index: 100;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    gap: 16px;
+  }
+  .loading-overlay.show { display: flex; }
+  .spinner {
+    width: 48px; height: 48px;
+    border: 5px solid #f9a8d4;
+    border-top-color: var(--purple);
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .loading-overlay p { font-weight: 700; color: var(--purple-dark); font-size: 1rem; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>gotozeros</h1>
+  <p>사진을 싸이월드 감성으로 바꿔보세요 🌸</p>
+</header>
+
+<!-- 업로드 화면 -->
+<div id="upload-screen">
+  <div id="drop-zone">
+    <input type="file" id="file-input" accept="image/*">
+    <div class="icon">📸</div>
+    <h2>사진을 올려보세요</h2>
+    <p>클릭하거나 사진을 끌어다 놓으세요</p>
+    <div class="btn-upload">사진 선택하기</div>
+  </div>
+  <p class="sample-hint">JPG, PNG, WEBP · 최대 20MB</p>
+</div>
+
+<!-- 결과 화면 -->
+<div id="result-screen">
+  <button class="back-btn" id="back-btn">← 다시 올리기</button>
+
+  <!-- 비교 -->
+  <div class="compare-wrap">
+    <div class="compare-card-main">
+      <div class="compare-label filtered" id="filter-label">싸이월드 필터</div>
+      <canvas id="filtered-canvas"></canvas>
+    </div>
+    <div class="compare-card-thumb">
+      <div class="compare-label-thumb">원본</div>
+      <img id="original-img" src="" alt="원본">
+    </div>
+  </div>
+
+  <!-- 피부 보정 -->
+  <div class="skin-section">
+    <button class="skin-toggle" id="skin-toggle">
+      <div class="toggle-pill" id="skin-pill"></div>
+      ✨ 피부 보정
+    </button>
+    <div class="skin-strength-wrap" id="skin-strength-wrap" style="display:none">
+      <input type="range" id="skin-strength" min="1" max="10" value="5">
+      <span id="skin-strength-val">5</span>
+    </div>
+  </div>
+  <div class="skin-status" id="skin-status"></div>
+
+  <!-- 필터 선택 -->
+  <div class="filter-section">
+    <div class="filter-section-title">필터 선택</div>
+    <div class="filter-list" id="filter-list">
+      <button class="filter-btn active" data-filter="cyworld">
+        <span class="emoji">🌸</span>싸이월드
+      </button>
+      <button class="filter-btn" data-filter="ulzzang">
+        <span class="emoji">📷</span>얼짱 디카
+      </button>
+      <button class="filter-btn" data-filter="camcorder">
+        <span class="emoji">📼</span>캠코더
+      </button>
+      <button class="filter-btn" data-filter="film">
+        <span class="emoji">🎞</span>필름카메라
+      </button>
+      <button class="filter-btn" data-filter="y2k">
+        <span class="emoji">💿</span>2005 감성
+      </button>
+    </div>
+  </div>
+
+  <!-- 다운로드 / 공유 -->
+  <div class="action-row">
+    <button class="btn btn-download" id="btn-download">📥 다운로드</button>
+    <button class="btn btn-share-main" id="btn-share-toggle">📤 공유하기</button>
+  </div>
+
+  <!-- 공유 패널 -->
+  <div class="share-panel" id="share-panel">
+    <div class="share-panel-title">공유 문구</div>
+    <div class="share-text-box" id="share-text-box">
+      내 사진을 싸이월드 감성으로 바꿔봤다 🌸<br>너도 해봐<br><br>gotozeros.com
+    </div>
+    <div class="share-btns">
+      <button class="share-icon-btn btn-kakao" id="btn-kakao">
+        <span class="s-icon">💬</span>카톡
+      </button>
+      <button class="share-icon-btn btn-insta" id="btn-insta">
+        <span class="s-icon">📸</span>인스타
+      </button>
+      <button class="share-icon-btn btn-twitter" id="btn-twitter">
+        <span class="s-icon">🐦</span>트위터
+      </button>
+      <button class="share-icon-btn btn-copy" id="btn-copy">
+        <span class="s-icon">🔗</span>링크 복사
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- 로딩 -->
+<div class="loading-overlay" id="loading">
+  <div class="spinner"></div>
+  <p>필터 적용 중...</p>
+</div>
+
+<!-- 토스트 -->
+<div id="toast"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh@0.4/face_mesh.js" crossorigin="anonymous"></script>
+<script>
+// ── 필터 정의 ──────────────────────────────────────────────
+const FILTERS = {
+  cyworld: {
+    name: '싸이월드',
+    css: 'saturate(1.35) brightness(1.08) contrast(1.05) hue-rotate(-8deg)',
+    overlay: { r: 255, g: 180, b: 210, a: 0.12 },
+    vignette: 0.25,
+    grain: 0.015,
+  },
+  ulzzang: {
+    name: '얼짱 디카',
+    css: 'contrast(1.35) brightness(1.18) saturate(1.2)',
+    overlay: { r: 255, g: 255, b: 255, a: 0.08 },
+    vignette: 0.0,
+    grain: 0.008,
+  },
+  camcorder: {
+    name: '캠코더',
+    css: 'saturate(0.75) brightness(0.97) contrast(1.12) hue-rotate(12deg)',
+    overlay: { r: 20, g: 40, b: 10, a: 0.10 },
+    vignette: 0.40,
+    grain: 0.02,
+    scanlines: true,
+  },
+  film: {
+    name: '필름카메라',
+    css: 'sepia(0.30) contrast(1.12) brightness(0.93) saturate(0.88)',
+    overlay: { r: 220, g: 180, b: 120, a: 0.10 },
+    vignette: 0.45,
+    grain: 0.035,
+  },
+  y2k: {
+    name: '2005 감성',
+    css: 'sepia(0.45) saturate(1.5) brightness(1.06) hue-rotate(-12deg) contrast(1.08)',
+    overlay: { r: 255, g: 200, b: 100, a: 0.08 },
+    vignette: 0.3,
+    grain: 0.02,
+  },
+};
+
+// ── 상태 ───────────────────────────────────────────────────
+let originalImg    = null;
+let currentFilter  = 'cyworld';
+let skinEnabled    = false;
+let skinStrength   = 5;
+let faceLandmarks  = null;
+let faceMeshReady  = false;
+let faceMesh       = null;
+
+// ── 요소 참조 ──────────────────────────────────────────────
+const uploadScreen   = document.getElementById('upload-screen');
+const resultScreen   = document.getElementById('result-screen');
+const fileInput      = document.getElementById('file-input');
+const dropZone       = document.getElementById('drop-zone');
+const originalImgEl  = document.getElementById('original-img');
+const canvas         = document.getElementById('filtered-canvas');
+const ctx            = canvas.getContext('2d');
+const filterLabel    = document.getElementById('filter-label');
+const loading        = document.getElementById('loading');
+const toast          = document.getElementById('toast');
+const sharePanel     = document.getElementById('share-panel');
+const shareTextBox   = document.getElementById('share-text-box');
+
+// ── 파일 처리 ──────────────────────────────────────────────
+fileInput.addEventListener('change', e => handleFile(e.target.files[0]));
+
+dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('drag-over'); });
+dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
+dropZone.addEventListener('drop', e => {
+  e.preventDefault();
+  dropZone.classList.remove('drag-over');
+  const file = e.dataTransfer.files[0];
+  if (file && file.type.startsWith('image/')) handleFile(file);
+});
+
+function handleFile(file) {
+  if (!file) return;
+  if (file.size > 20 * 1024 * 1024) { showToast('20MB 이하 파일만 가능해요'); return; }
+
+  loading.classList.add('show');
+  faceLandmarks = null;
+  const reader = new FileReader();
+  reader.onload = e => {
+    const img = new Image();
+    img.onload = async () => {
+      originalImg = img;
+      originalImgEl.src = e.target.result;
+      // 얼굴 감지 (백그라운드)
+      detectFaceLandmarks(img);
+      applyFilter(currentFilter);
+      uploadScreen.style.display = 'none';
+      resultScreen.style.display = 'block';
+      loading.classList.remove('show');
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+// ── 필터 적용 ──────────────────────────────────────────────
+function applyFilter(filterKey) {
+  if (!originalImg) return;
+  const f = FILTERS[filterKey];
+
+  // 캔버스 크기
+  const MAX = 1200;
+  let w = originalImg.naturalWidth;
+  let h = originalImg.naturalHeight;
+  if (w > MAX || h > MAX) {
+    if (w > h) { h = Math.round(h * MAX / w); w = MAX; }
+    else        { w = Math.round(w * MAX / h); h = MAX; }
+  }
+  canvas.width  = w;
+  canvas.height = h;
+
+  // 1. CSS filter로 기본 색조 적용
+  ctx.filter = f.css;
+  ctx.drawImage(originalImg, 0, 0, w, h);
+  ctx.filter = 'none';
+
+  // 2. 컬러 오버레이
+  if (f.overlay && f.overlay.a > 0) {
+    const { r, g, b, a } = f.overlay;
+    ctx.fillStyle = `rgba(${r},${g},${b},${a})`;
+    ctx.fillRect(0, 0, w, h);
+  }
+
+  // 3. 비네트
+  if (f.vignette > 0) addVignette(w, h, f.vignette);
+
+  // 4. 그레인
+  if (f.grain > 0) addGrain(w, h, f.grain);
+
+  // 5. 스캔라인 (캠코더)
+  if (f.scanlines) addScanlines(w, h);
+
+  // 피부 보정
+  if (skinEnabled) applySkinSmoothing(w, h);
+
+  // 레이블 업데이트
+  filterLabel.textContent = FILTERS[filterKey].name + (skinEnabled ? ' + 피부보정' : '');
+  updateShareText(filterKey);
+}
+
+function addVignette(w, h, strength) {
+  const grad = ctx.createRadialGradient(w/2, h/2, h*0.3, w/2, h/2, h*0.9);
+  grad.addColorStop(0, 'rgba(0,0,0,0)');
+  grad.addColorStop(1, `rgba(0,0,0,${strength})`);
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, w, h);
+}
+
+function addGrain(w, h, amount) {
+  const imageData = ctx.getImageData(0, 0, w, h);
+  const d = imageData.data;
+  for (let i = 0; i < d.length; i += 4) {
+    const noise = (Math.random() - 0.5) * 255 * amount * 3;
+    d[i]   = Math.min(255, Math.max(0, d[i]   + noise));
+    d[i+1] = Math.min(255, Math.max(0, d[i+1] + noise));
+    d[i+2] = Math.min(255, Math.max(0, d[i+2] + noise));
+  }
+  ctx.putImageData(imageData, 0, 0);
+}
+
+function addScanlines(w, h) {
+  ctx.fillStyle = 'rgba(0,0,0,0.06)';
+  for (let y = 0; y < h; y += 3) {
+    ctx.fillRect(0, y, w, 1);
+  }
+}
+
+// ── MediaPipe 얼굴 감지 ────────────────────────────────────
+// 얼굴 외곽 landmark 인덱스 (Face Oval)
+const FACE_OVAL = [10,338,297,332,284,251,389,356,454,323,361,288,397,365,379,378,400,377,152,148,176,149,150,136,172,58,132,93,234,127,162,21,54,103,67,109];
+
+async function initFaceMesh() {
+  if (faceMesh) return;
+  const skinStatus = document.getElementById('skin-status');
+  skinStatus.textContent = '얼굴 감지 모델 로딩 중...';
+  faceMesh = new FaceMesh({
+    locateFile: f => `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh@0.4/${f}`
+  });
+  faceMesh.setOptions({ maxNumFaces: 1, refineLandmarks: false, minDetectionConfidence: 0.5, minTrackingConfidence: 0.5 });
+  faceMesh.onResults(results => {
+    if (results.multiFaceLandmarks && results.multiFaceLandmarks.length > 0) {
+      faceLandmarks = results.multiFaceLandmarks[0];
+    } else {
+      faceLandmarks = null;
+    }
+  });
+  await faceMesh.initialize();
+  faceMeshReady = true;
+}
+
+async function detectFaceLandmarks(img) {
+  try {
+    await initFaceMesh();
+    await faceMesh.send({ image: img });
+    const skinStatus = document.getElementById('skin-status');
+    if (faceLandmarks) {
+      skinStatus.textContent = skinEnabled ? '얼굴 감지 완료 ✓' : '';
+    } else {
+      skinStatus.textContent = skinEnabled ? '얼굴을 감지하지 못했어요' : '';
+    }
+  } catch(e) {
+    console.warn('FaceMesh error:', e);
+  }
+}
+
+function applySkinSmoothing(w, h) {
+  const skinStatus = document.getElementById('skin-status');
+  if (!faceLandmarks) {
+    // 얼굴 미감지: 전체 소프트 스무딩
+    applyGlobalSmoothing(w, h, skinStrength * 0.3);
+    return;
+  }
+
+  // 원본 픽셀 저장
+  const origData = ctx.getImageData(0, 0, w, h);
+
+  // 블러 버전 생성
+  const blurAmt = skinStrength * 0.8;
+  const blurCanvas = document.createElement('canvas');
+  blurCanvas.width = w; blurCanvas.height = h;
+  const blurCtx = blurCanvas.getContext('2d');
+  blurCtx.filter = `blur(${blurAmt}px)`;
+  blurCtx.drawImage(canvas, 0, 0);
+  const blurData = blurCtx.getImageData(0, 0, w, h);
+
+  // 얼굴 마스크 생성 (페더링 포함)
+  const maskCanvas = document.createElement('canvas');
+  maskCanvas.width = w; maskCanvas.height = h;
+  const maskCtx = maskCanvas.getContext('2d');
+
+  // 얼굴 외곽 경로
+  maskCtx.beginPath();
+  FACE_OVAL.forEach((idx, i) => {
+    const lm = faceLandmarks[idx];
+    if (i === 0) maskCtx.moveTo(lm.x * w, lm.y * h);
+    else maskCtx.lineTo(lm.x * w, lm.y * h);
+  });
+  maskCtx.closePath();
+  maskCtx.fillStyle = 'white';
+  maskCtx.fill();
+
+  // 마스크 블러(페더링)
+  const fCanvas = document.createElement('canvas');
+  fCanvas.width = w; fCanvas.height = h;
+  const fCtx = fCanvas.getContext('2d');
+  fCtx.filter = 'blur(20px)';
+  fCtx.drawImage(maskCanvas, 0, 0);
+  const maskData = fCtx.getImageData(0, 0, w, h);
+
+  // 블렌딩
+  const strength = skinStrength / 10 * 0.75; // 최대 75% 블렌딩
+  const result = ctx.createImageData(w, h);
+  for (let i = 0; i < result.data.length; i += 4) {
+    const m = (maskData.data[i] / 255) * strength;
+    result.data[i]   = origData.data[i]   * (1 - m) + blurData.data[i]   * m;
+    result.data[i+1] = origData.data[i+1] * (1 - m) + blurData.data[i+1] * m;
+    result.data[i+2] = origData.data[i+2] * (1 - m) + blurData.data[i+2] * m;
+    result.data[i+3] = origData.data[i+3];
+  }
+  ctx.putImageData(result, 0, 0);
+  if (skinEnabled) skinStatus.textContent = '피부 보정 적용됨 ✓';
+}
+
+function applyGlobalSmoothing(w, h, blurAmt) {
+  const blurCanvas = document.createElement('canvas');
+  blurCanvas.width = w; blurCanvas.height = h;
+  const bc = blurCanvas.getContext('2d');
+  bc.filter = `blur(${blurAmt}px)`;
+  bc.drawImage(canvas, 0, 0);
+  ctx.globalAlpha = 0.5;
+  ctx.drawImage(blurCanvas, 0, 0);
+  ctx.globalAlpha = 1.0;
+}
+
+// ── 피부 보정 토글 ─────────────────────────────────────────
+const skinToggleBtn  = document.getElementById('skin-toggle');
+const skinPill       = document.getElementById('skin-pill');
+const skinStrengthWrap = document.getElementById('skin-strength-wrap');
+const skinStrengthInput = document.getElementById('skin-strength');
+const skinStrengthVal   = document.getElementById('skin-strength-val');
+const skinStatus        = document.getElementById('skin-status');
+
+skinToggleBtn.addEventListener('click', () => {
+  skinEnabled = !skinEnabled;
+  skinPill.classList.toggle('on', skinEnabled);
+  skinToggleBtn.classList.toggle('on', skinEnabled);
+  skinStrengthWrap.style.display = skinEnabled ? 'flex' : 'none';
+  if (skinEnabled && !faceMeshReady) {
+    skinStatus.textContent = '얼굴 감지 모델 로딩 중...';
+    detectFaceLandmarks(originalImg).then(() => {
+      reapplyFilter();
+    });
+  } else {
+    reapplyFilter();
+  }
+});
+
+skinStrengthInput.addEventListener('input', () => {
+  skinStrength = parseInt(skinStrengthInput.value);
+  skinStrengthVal.textContent = skinStrength;
+  reapplyFilter();
+});
+
+function reapplyFilter() {
+  loading.classList.add('show');
+  setTimeout(() => {
+    applyFilter(currentFilter);
+    loading.classList.remove('show');
+  }, 30);
+}
+
+// ── 필터 버튼 ──────────────────────────────────────────────
+document.getElementById('filter-list').addEventListener('click', e => {
+  const btn = e.target.closest('.filter-btn');
+  if (!btn) return;
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  currentFilter = btn.dataset.filter;
+  loading.classList.add('show');
+  setTimeout(() => {
+    applyFilter(currentFilter);
+    loading.classList.remove('show');
+  }, 30);
+});
+
+// ── 뒤로가기 ──────────────────────────────────────────────
+document.getElementById('back-btn').addEventListener('click', () => {
+  uploadScreen.style.display = 'block';
+  resultScreen.style.display = 'none';
+  sharePanel.classList.remove('open');
+  fileInput.value = '';
+  originalImg = null;
+});
+
+// ── 다운로드 ──────────────────────────────────────────────
+document.getElementById('btn-download').addEventListener('click', () => {
+  const link = document.createElement('a');
+  link.download = `gotozeros_${currentFilter}_${Date.now()}.jpg`;
+  link.href = canvas.toDataURL('image/jpeg', 0.92);
+  link.click();
+  showToast('다운로드 완료!');
+});
+
+// ── 공유 패널 토글 ─────────────────────────────────────────
+document.getElementById('btn-share-toggle').addEventListener('click', () => {
+  sharePanel.classList.toggle('open');
+});
+
+function updateShareText(filterKey) {
+  const name = FILTERS[filterKey].name;
+  const emoji = document.querySelector(`[data-filter="${filterKey}"] .emoji`).textContent;
+  shareTextBox.innerHTML = `내 사진을 ${name} 필터로 바꿔봤다 ${emoji}<br>너도 해봐<br><br>gotozeros.com`;
+}
+
+// ── 공유 버튼 ──────────────────────────────────────────────
+document.getElementById('btn-kakao').addEventListener('click', () => {
+  // KakaoSDK 없이 텍스트 복사로 대체
+  copyShareText();
+  showToast('카카오톡에 붙여넣기 해보세요!');
+});
+
+document.getElementById('btn-insta').addEventListener('click', () => {
+  canvas.toBlob(blob => {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `gotozeros_${currentFilter}.jpg`;
+    a.click();
+    showToast('사진 저장됨! 인스타에 올려보세요 📸');
+  }, 'image/jpeg', 0.92);
+});
+
+document.getElementById('btn-twitter').addEventListener('click', () => {
+  const text = encodeURIComponent(`내 사진을 싸이월드 감성으로 바꿔봤다 🌸 너도 해봐\ngotozeros.com`);
+  window.open(`https://twitter.com/intent/tweet?text=${text}`, '_blank');
+});
+
+document.getElementById('btn-copy').addEventListener('click', () => {
+  copyShareText();
+  const btn = document.getElementById('btn-copy');
+  btn.classList.add('copied');
+  btn.querySelector('.s-icon').textContent = '✅';
+  setTimeout(() => {
+    btn.classList.remove('copied');
+    btn.querySelector('.s-icon').textContent = '🔗';
+  }, 2000);
+  showToast('링크 복사됨!');
+});
+
+function copyShareText() {
+  const text = `내 사진을 싸이월드 감성으로 바꿔봤다 🌸 너도 해봐\ngotozeros.com`;
+  navigator.clipboard.writeText(text).catch(() => {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+  });
+}
+
+// ── 토스트 ─────────────────────────────────────────────────
+function showToast(msg) {
+  toast.textContent = msg;
+  toast.classList.add('show');
+  clearTimeout(toast._timer);
+  toast._timer = setTimeout(() => toast.classList.remove('show'), 2200);
+}
+</script>
+</body>
+</html>
