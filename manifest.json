@@ -1,0 +1,18 @@
+{
+  "name": "gotozeros - 싸이월드 감성 필터",
+  "short_name": "gotozeros",
+  "description": "싸이월드 감성 사진 필터 웹앱",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#1a0533",
+  "theme_color": "#ff6ec7",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
