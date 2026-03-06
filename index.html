@@ -251,6 +251,71 @@
     min-height: 16px;
   }
 
+  /* 얼굴 보정 섹션 */
+  .beauty-section {
+    background: white;
+    border-radius: 16px;
+    padding: 12px 16px;
+    margin-bottom: 6px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .beauty-toggle {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: var(--gray);
+    cursor: pointer;
+    background: none;
+    border: none;
+    flex-shrink: 0;
+  }
+  .beauty-toggle.on { color: var(--purple-dark); }
+  .beauty-controls {
+    background: white;
+    border-radius: 16px;
+    padding: 12px 16px;
+    margin-bottom: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  }
+  .beauty-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+  }
+  .beauty-row:last-child { margin-bottom: 0; }
+  .beauty-row span:first-child {
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: var(--gray);
+    width: 64px;
+    flex-shrink: 0;
+  }
+  .beauty-row input[type=range] {
+    flex: 1;
+    accent-color: var(--purple);
+    height: 4px;
+  }
+  .beauty-row span:last-child {
+    font-size: 0.75rem;
+    color: var(--gray);
+    width: 24px;
+    text-align: right;
+  }
+  .beauty-status {
+    font-size: 0.72rem;
+    color: var(--gray);
+    text-align: center;
+    margin-top: -6px;
+    margin-bottom: 10px;
+    min-height: 16px;
+  }
+
   /* 필터 선택 */
   .filter-section { margin-bottom: 16px; }
   .filter-section-title {
@@ -469,10 +534,39 @@
   </div>
   <div class="skin-status" id="skin-status"></div>
 
+  <!-- 얼굴 보정 -->
+  <div class="beauty-section">
+    <button class="beauty-toggle" id="beauty-toggle">
+      <div class="toggle-pill" id="beauty-pill"></div>
+      💎 얼굴 보정
+    </button>
+  </div>
+  <div class="beauty-controls" id="beauty-controls" style="display:none">
+    <div class="beauty-row">
+      <span>얼굴 슬림</span>
+      <input type="range" id="face-slim" min="0" max="30" value="15">
+      <span id="face-slim-val">15</span>
+    </div>
+    <div class="beauty-row">
+      <span>코 보정</span>
+      <input type="range" id="nose-slim" min="0" max="60" value="40">
+      <span id="nose-slim-val">40</span>
+    </div>
+    <div class="beauty-row">
+      <span>눈 자연화</span>
+      <input type="range" id="eye-natural" min="0" max="40" value="20">
+      <span id="eye-natural-val">20</span>
+    </div>
+  </div>
+  <div class="beauty-status" id="beauty-status"></div>
+
   <!-- 필터 선택 -->
   <div class="filter-section">
     <div class="filter-section-title">필터 선택</div>
     <div class="filter-list" id="filter-list">
+      <button class="filter-btn" data-filter="natural">
+        <span class="emoji">✨</span>오리지널
+      </button>
       <button class="filter-btn active" data-filter="cyworld">
         <span class="emoji">🌸</span>싸이월드
       </button>
@@ -533,6 +627,13 @@
 <script>
 // ── 필터 정의 ──────────────────────────────────────────────
 const FILTERS = {
+  natural: {
+    name: '오리지널',
+    css: 'brightness(1.03) contrast(0.95) saturate(0.96)',
+    overlay: { r: 255, g: 240, b: 210, a: 0.04 },
+    vignette: 0.0,
+    grain: 0.005,
+  },
   cyworld: {
     name: '싸이월드',
     css: 'saturate(1.35) brightness(1.08) contrast(1.05) hue-rotate(-8deg)',
@@ -576,6 +677,10 @@ let originalImg    = null;
 let currentFilter  = 'cyworld';
 let skinEnabled    = false;
 let skinStrength   = 5;
+let beautyEnabled  = false;
+let faceSlimVal    = 15;
+let noseSlimVal    = 40;
+let eyeNaturalVal  = 20;
 let faceLandmarks  = null;
 let faceMeshReady  = false;
 let faceMesh       = null;
@@ -670,8 +775,12 @@ function applyFilter(filterKey) {
   // 피부 보정
   if (skinEnabled) applySkinSmoothing(w, h);
 
+  // 얼굴 워핑 보정
+  if (beautyEnabled) applyFaceWarp(w, h);
+
   // 레이블 업데이트
-  filterLabel.textContent = FILTERS[filterKey].name + (skinEnabled ? ' + 피부보정' : '');
+  const extras = [skinEnabled ? '피부보정' : '', beautyEnabled ? '얼굴보정' : ''].filter(Boolean).join('+');
+  filterLabel.textContent = FILTERS[filterKey].name + (extras ? ' + ' + extras : '');
   updateShareText(filterKey);
 }
 
@@ -700,6 +809,115 @@ function addScanlines(w, h) {
   for (let y = 0; y < h; y += 3) {
     ctx.fillRect(0, y, w, 1);
   }
+}
+
+// ── 얼굴 워핑 보정 ─────────────────────────────────────────
+function applyFaceWarp(w, h) {
+  if (!faceLandmarks) {
+    document.getElementById('beauty-status').textContent = '얼굴을 감지하지 못했어요';
+    return;
+  }
+
+  const src = ctx.getImageData(0, 0, w, h);
+  const dxMap = new Float32Array(w * h);
+  const dyMap = new Float32Array(w * h);
+
+  function addDisp(lmIdx, dx, dy, radius) {
+    const lm = faceLandmarks[lmIdx];
+    if (!lm) return;
+    const cx = lm.x * w, cy = lm.y * h;
+    const minX = Math.max(0, Math.floor(cx - radius));
+    const maxX = Math.min(w - 1, Math.ceil(cx + radius));
+    const minY = Math.max(0, Math.floor(cy - radius));
+    const maxY = Math.min(h - 1, Math.ceil(cy + radius));
+    for (let y = minY; y <= maxY; y++) {
+      for (let x = minX; x <= maxX; x++) {
+        const dist = Math.sqrt((x - cx) ** 2 + (y - cy) ** 2);
+        if (dist < radius) {
+          const t = 1 - dist / radius;
+          const w2 = t * t * (3 - 2 * t);
+          dxMap[y * w + x] += dx * w2;
+          dyMap[y * w + x] += dy * w2;
+        }
+      }
+    }
+  }
+
+  const centerX = w / 2;
+
+  // 1. 얼굴 슬림
+  if (faceSlimVal > 0) {
+    const str = faceSlimVal / 100;
+    const r = w * 0.30;
+    const leftEdge  = [234, 93, 172, 136, 150, 149];
+    const rightEdge = [454, 323, 361, 397, 365, 379];
+    for (const idx of leftEdge) {
+      const lm = faceLandmarks[idx];
+      if (lm) addDisp(idx, (centerX - lm.x * w) * str * 0.35, 0, r);
+    }
+    for (const idx of rightEdge) {
+      const lm = faceLandmarks[idx];
+      if (lm) addDisp(idx, (centerX - lm.x * w) * str * 0.35, 0, r);
+    }
+  }
+
+  // 2. 코 슬림
+  if (noseSlimVal > 0) {
+    const str = noseSlimVal / 100;
+    const noseTip = faceLandmarks[4];
+    const nx = noseTip ? noseTip.x * w : centerX;
+    const noseR = w * 0.11;
+    const nosePoints = [129, 358, 98, 327, 49, 279, 48, 278];
+    for (const idx of nosePoints) {
+      const lm = faceLandmarks[idx];
+      if (lm) addDisp(idx, (nx - lm.x * w) * str * 0.55, 0, noseR);
+    }
+  }
+
+  // 3. 눈 자연화
+  if (eyeNaturalVal > 0) {
+    const str = eyeNaturalVal / 100;
+    const eyeR = w * 0.09;
+    const leftOuter  = faceLandmarks[33];
+    const leftInner  = faceLandmarks[133];
+    const rightOuter = faceLandmarks[263];
+    const rightInner = faceLandmarks[362];
+
+    const lEyeCx = leftOuter && leftInner ? (leftOuter.x + leftInner.x) / 2 * w : 0;
+    const lEyeCy = leftOuter && leftInner ? (leftOuter.y + leftInner.y) / 2 * h : 0;
+    const rEyeCx = rightOuter && rightInner ? (rightOuter.x + rightInner.x) / 2 * w : 0;
+    const rEyeCy = rightOuter && rightInner ? (rightOuter.y + rightInner.y) / 2 * h : 0;
+
+    const leftEyePts  = [33, 7, 163, 144, 145, 153, 154, 155, 133, 173, 157, 158, 159, 160, 161, 246];
+    const rightEyePts = [362, 382, 381, 380, 374, 373, 390, 249, 263, 466, 388, 387, 386, 385, 384, 398];
+
+    for (const idx of leftEyePts) {
+      const lm = faceLandmarks[idx];
+      if (lm) addDisp(idx, (lEyeCx - lm.x * w) * str * 0.28, (lEyeCy - lm.y * h) * str * 0.28, eyeR);
+    }
+    for (const idx of rightEyePts) {
+      const lm = faceLandmarks[idx];
+      if (lm) addDisp(idx, (rEyeCx - lm.x * w) * str * 0.28, (rEyeCy - lm.y * h) * str * 0.28, eyeR);
+    }
+  }
+
+  // 역매핑 적용
+  const dst = ctx.createImageData(w, h);
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      const i = y * w + x;
+      const sx = Math.min(Math.max(Math.round(x - dxMap[i]), 0), w - 1);
+      const sy = Math.min(Math.max(Math.round(y - dyMap[i]), 0), h - 1);
+      const si = (sy * w + sx) * 4;
+      const di = i * 4;
+      dst.data[di]     = src.data[si];
+      dst.data[di + 1] = src.data[si + 1];
+      dst.data[di + 2] = src.data[si + 2];
+      dst.data[di + 3] = src.data[si + 3];
+    }
+  }
+  ctx.putImageData(dst, 0, 0);
+  document.getElementById('beauty-status').textContent = '얼굴 보정 적용됨 ✓';
 }
 
 // ── MediaPipe 얼굴 감지 ────────────────────────────────────
@@ -845,6 +1063,41 @@ function reapplyFilter() {
     loading.classList.remove('show');
   }, 30);
 }
+
+// ── 얼굴 보정 토글 ─────────────────────────────────────────
+const beautyToggleBtn  = document.getElementById('beauty-toggle');
+const beautyPill       = document.getElementById('beauty-pill');
+const beautyControls   = document.getElementById('beauty-controls');
+const beautyStatus     = document.getElementById('beauty-status');
+
+beautyToggleBtn.addEventListener('click', () => {
+  beautyEnabled = !beautyEnabled;
+  beautyPill.classList.toggle('on', beautyEnabled);
+  beautyToggleBtn.classList.toggle('on', beautyEnabled);
+  beautyControls.style.display = beautyEnabled ? 'block' : 'none';
+  if (beautyEnabled && !faceMeshReady) {
+    beautyStatus.textContent = '얼굴 감지 모델 로딩 중...';
+    detectFaceLandmarks(originalImg).then(() => reapplyFilter());
+  } else {
+    reapplyFilter();
+  }
+});
+
+document.getElementById('face-slim').addEventListener('input', e => {
+  faceSlimVal = parseInt(e.target.value);
+  document.getElementById('face-slim-val').textContent = faceSlimVal;
+  reapplyFilter();
+});
+document.getElementById('nose-slim').addEventListener('input', e => {
+  noseSlimVal = parseInt(e.target.value);
+  document.getElementById('nose-slim-val').textContent = noseSlimVal;
+  reapplyFilter();
+});
+document.getElementById('eye-natural').addEventListener('input', e => {
+  eyeNaturalVal = parseInt(e.target.value);
+  document.getElementById('eye-natural-val').textContent = eyeNaturalVal;
+  reapplyFilter();
+});
 
 // ── 필터 버튼 ──────────────────────────────────────────────
 document.getElementById('filter-list').addEventListener('click', e => {
