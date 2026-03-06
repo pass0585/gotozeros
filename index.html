@@ -544,18 +544,18 @@
   <div class="beauty-controls" id="beauty-controls" style="display:none">
     <div class="beauty-row">
       <span>얼굴 슬림</span>
-      <input type="range" id="face-slim" min="0" max="30" value="15">
-      <span id="face-slim-val">15</span>
+      <input type="range" id="face-slim" min="0" max="30" value="8">
+      <span id="face-slim-val">8</span>
     </div>
     <div class="beauty-row">
       <span>코 보정</span>
-      <input type="range" id="nose-slim" min="0" max="60" value="40">
-      <span id="nose-slim-val">40</span>
+      <input type="range" id="nose-slim" min="0" max="60" value="20">
+      <span id="nose-slim-val">20</span>
     </div>
     <div class="beauty-row">
       <span>눈 자연화</span>
-      <input type="range" id="eye-natural" min="0" max="40" value="20">
-      <span id="eye-natural-val">20</span>
+      <input type="range" id="eye-natural" min="0" max="40" value="10">
+      <span id="eye-natural-val">10</span>
     </div>
   </div>
   <div class="beauty-status" id="beauty-status"></div>
@@ -678,9 +678,9 @@ let currentFilter  = 'cyworld';
 let skinEnabled    = false;
 let skinStrength   = 5;
 let beautyEnabled  = false;
-let faceSlimVal    = 15;
-let noseSlimVal    = 40;
-let eyeNaturalVal  = 20;
+let faceSlimVal    = 8;
+let noseSlimVal    = 20;
+let eyeNaturalVal  = 10;
 let faceLandmarks  = null;
 let faceMeshReady  = false;
 let faceMesh       = null;
@@ -848,16 +848,16 @@ function applyFaceWarp(w, h) {
   // 1. 얼굴 슬림
   if (faceSlimVal > 0) {
     const str = faceSlimVal / 100;
-    const r = w * 0.30;
-    const leftEdge  = [234, 93, 172, 136, 150, 149];
-    const rightEdge = [454, 323, 361, 397, 365, 379];
+    const r = w * 0.20;
+    const leftEdge  = [234, 172, 136];
+    const rightEdge = [454, 361, 397];
     for (const idx of leftEdge) {
       const lm = faceLandmarks[idx];
-      if (lm) addDisp(idx, (centerX - lm.x * w) * str * 0.35, 0, r);
+      if (lm) addDisp(idx, (centerX - lm.x * w) * str * 0.18, 0, r);
     }
     for (const idx of rightEdge) {
       const lm = faceLandmarks[idx];
-      if (lm) addDisp(idx, (centerX - lm.x * w) * str * 0.35, 0, r);
+      if (lm) addDisp(idx, (centerX - lm.x * w) * str * 0.18, 0, r);
     }
   }
 
@@ -866,18 +866,18 @@ function applyFaceWarp(w, h) {
     const str = noseSlimVal / 100;
     const noseTip = faceLandmarks[4];
     const nx = noseTip ? noseTip.x * w : centerX;
-    const noseR = w * 0.11;
-    const nosePoints = [129, 358, 98, 327, 49, 279, 48, 278];
+    const noseR = w * 0.08;
+    const nosePoints = [129, 358, 98, 327];
     for (const idx of nosePoints) {
       const lm = faceLandmarks[idx];
-      if (lm) addDisp(idx, (nx - lm.x * w) * str * 0.55, 0, noseR);
+      if (lm) addDisp(idx, (nx - lm.x * w) * str * 0.28, 0, noseR);
     }
   }
 
   // 3. 눈 자연화
   if (eyeNaturalVal > 0) {
     const str = eyeNaturalVal / 100;
-    const eyeR = w * 0.09;
+    const eyeR = w * 0.07;
     const leftOuter  = faceLandmarks[33];
     const leftInner  = faceLandmarks[133];
     const rightOuter = faceLandmarks[263];
@@ -888,16 +888,16 @@ function applyFaceWarp(w, h) {
     const rEyeCx = rightOuter && rightInner ? (rightOuter.x + rightInner.x) / 2 * w : 0;
     const rEyeCy = rightOuter && rightInner ? (rightOuter.y + rightInner.y) / 2 * h : 0;
 
-    const leftEyePts  = [33, 7, 163, 144, 145, 153, 154, 155, 133, 173, 157, 158, 159, 160, 161, 246];
-    const rightEyePts = [362, 382, 381, 380, 374, 373, 390, 249, 263, 466, 388, 387, 386, 385, 384, 398];
+    const leftEyePts  = [33, 145, 159, 133, 160, 246];
+    const rightEyePts = [263, 374, 386, 362, 385, 466];
 
     for (const idx of leftEyePts) {
       const lm = faceLandmarks[idx];
-      if (lm) addDisp(idx, (lEyeCx - lm.x * w) * str * 0.28, (lEyeCy - lm.y * h) * str * 0.28, eyeR);
+      if (lm) addDisp(idx, (lEyeCx - lm.x * w) * str * 0.14, (lEyeCy - lm.y * h) * str * 0.14, eyeR);
     }
     for (const idx of rightEyePts) {
       const lm = faceLandmarks[idx];
-      if (lm) addDisp(idx, (rEyeCx - lm.x * w) * str * 0.28, (rEyeCy - lm.y * h) * str * 0.28, eyeR);
+      if (lm) addDisp(idx, (rEyeCx - lm.x * w) * str * 0.14, (rEyeCy - lm.y * h) * str * 0.14, eyeR);
     }
   }
 
