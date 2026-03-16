@@ -977,5 +977,200 @@ if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('/sw.js');
 }
 </script>
+
+<!-- ── 콘텐츠 섹션 ── -->
+<style>
+  .content-section {
+    max-width: 640px;
+    margin: 48px auto 0;
+    padding: 0 20px 60px;
+  }
+  .content-section h2 {
+    font-size: 1.3rem;
+    font-weight: 800;
+    color: #7c3aed;
+    margin-bottom: 16px;
+    padding-bottom: 8px;
+    border-bottom: 2px solid #f9a8d4;
+  }
+  .content-section h3 {
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: #ec4899;
+    margin: 20px 0 8px;
+  }
+  .content-section p {
+    font-size: 0.95rem;
+    line-height: 1.8;
+    color: #374151;
+    margin-bottom: 10px;
+  }
+  .how-to-steps {
+    counter-reset: step;
+    list-style: none;
+    padding: 0;
+    margin: 0 0 16px;
+  }
+  .how-to-steps li {
+    counter-increment: step;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 10px 0;
+    border-bottom: 1px solid #fce7f3;
+    font-size: 0.93rem;
+    color: #374151;
+    line-height: 1.6;
+  }
+  .how-to-steps li::before {
+    content: counter(step);
+    min-width: 28px;
+    height: 28px;
+    background: linear-gradient(135deg, #ec4899, #8b5cf6);
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.8rem;
+    font-weight: 800;
+    flex-shrink: 0;
+  }
+  .filter-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin: 12px 0 20px;
+  }
+  .filter-item {
+    background: white;
+    border: 1.5px solid #fce7f3;
+    border-radius: 12px;
+    padding: 14px 16px;
+  }
+  .filter-item strong {
+    display: block;
+    color: #7c3aed;
+    font-size: 0.9rem;
+    margin-bottom: 4px;
+  }
+  .filter-item span {
+    font-size: 0.82rem;
+    color: #6b7280;
+    line-height: 1.5;
+  }
+  .faq-list {
+    list-style: none;
+    padding: 0;
+  }
+  .faq-list li {
+    background: white;
+    border: 1.5px solid #ede9fe;
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 10px;
+  }
+  .faq-list li strong {
+    display: block;
+    color: #7c3aed;
+    font-size: 0.93rem;
+    margin-bottom: 6px;
+  }
+  .faq-list li p {
+    margin: 0;
+    font-size: 0.88rem;
+    color: #4b5563;
+  }
+  .site-footer {
+    text-align: center;
+    padding: 24px 16px;
+    background: linear-gradient(135deg, #fce7f3, #ede9fe);
+    border-top: 2px solid #f9a8d4;
+    font-size: 0.82rem;
+    color: #9ca3af;
+  }
+  .site-footer a { color: #a855f7; text-decoration: none; }
+</style>
+
+<div class="content-section">
+
+  <h2>사용 방법</h2>
+  <p>gotozeros는 사진 한 장으로 2000년대 싸이월드 감성을 재현해 주는 무료 이미지 필터 서비스입니다. 복잡한 앱 설치 없이 브라우저에서 바로 사용할 수 있습니다.</p>
+  <ol class="how-to-steps">
+    <li>상단 업로드 영역에 사진을 드래그하거나 클릭해서 파일을 선택합니다.</li>
+    <li>자동으로 다양한 싸이월드 감성 필터가 적용된 미리보기가 나타납니다.</li>
+    <li>마음에 드는 필터 위에 마우스를 올리면 원본 사진과 크게 비교할 수 있습니다.</li>
+    <li>원하는 필터 이미지를 클릭하면 PNG 파일로 저장됩니다.</li>
+  </ol>
+
+  <h2>필터 소개</h2>
+  <p>gotozeros에는 2000년대 디지털 카메라와 미니홈피 감성을 담은 다양한 필터가 준비되어 있습니다.</p>
+  <div class="filter-grid">
+    <div class="filter-item">
+      <strong>오리지널</strong>
+      <span>원본 그대로. 비교용으로 함께 보여줍니다.</span>
+    </div>
+    <div class="filter-item">
+      <strong>싸이월드 감성</strong>
+      <span>채도를 올리고 따뜻한 색감을 더한 대표 필터.</span>
+    </div>
+    <div class="filter-item">
+      <strong>미니홈피 여름</strong>
+      <span>밝고 화사한 여름 느낌의 보정.</span>
+    </div>
+    <div class="filter-item">
+      <strong>디카 감성</strong>
+      <span>2000년대 저화질 디지털 카메라 특유의 질감.</span>
+    </div>
+    <div class="filter-item">
+      <strong>흑백 복고</strong>
+      <span>미니홈피 감성의 흑백 처리.</span>
+    </div>
+    <div class="filter-item">
+      <strong>핑크 드림</strong>
+      <span>핑크 톤을 강조한 소녀 감성 필터.</span>
+    </div>
+  </div>
+
+  <h2>자주 묻는 질문</h2>
+  <ul class="faq-list">
+    <li>
+      <strong>Q. 사진이 서버에 저장되나요?</strong>
+      <p>아니요. gotozeros는 모든 처리를 브라우저 안에서만 진행합니다. 업로드한 사진은 외부 서버로 전송되지 않습니다.</p>
+    </li>
+    <li>
+      <strong>Q. 어떤 파일 형식을 지원하나요?</strong>
+      <p>JPG, PNG, WEBP 등 브라우저에서 지원하는 대부분의 이미지 형식을 사용할 수 있습니다.</p>
+    </li>
+    <li>
+      <strong>Q. 저장되는 파일 형식은 무엇인가요?</strong>
+      <p>필터가 적용된 이미지는 PNG 형식으로 저장됩니다.</p>
+    </li>
+    <li>
+      <strong>Q. 모바일에서도 사용할 수 있나요?</strong>
+      <p>네. 스마트폰 브라우저에서도 사용할 수 있고, 홈 화면에 추가하면 앱처럼 사용할 수 있습니다.</p>
+    </li>
+    <li>
+      <strong>Q. 인터넷 없이도 사용할 수 있나요?</strong>
+      <p>한 번 접속한 이후에는 오프라인 상태에서도 사용할 수 있습니다. PWA로 설치하면 더 편리하게 이용할 수 있습니다.</p>
+    </li>
+    <li>
+      <strong>Q. gotozeros는 무슨 뜻인가요?</strong>
+      <p>2000년대로 돌아간다는 의미에서 "go to zeros(2000s)"를 줄인 이름입니다. 싸이월드, 미니홈피, 디지털 카메라가 익숙했던 그 시절의 감성을 다시 느껴보세요.</p>
+    </li>
+  </ul>
+
+  <h2>gotozeros 소개</h2>
+  <p>gotozeros는 2000년대 초반 인터넷 문화의 상징이었던 싸이월드 미니홈피 감성을 현재의 사진에 입히는 무료 웹 서비스입니다.</p>
+  <p>당시 유행했던 디지털 카메라 특유의 색감, 약간 과포화된 색상, 뭉개지는 질감 등을 Canvas API와 WebGL로 재현했습니다. 스마트폰으로 찍은 선명한 사진에 그 시절의 텍스처를 입혀보세요.</p>
+  <p>설치 없이 브라우저에서 바로 사용할 수 있으며, 처리된 사진은 기기에 직접 저장됩니다. 개인 정보 걱정 없이 자유롭게 사용하세요.</p>
+
+</div>
+
+<footer class="site-footer">
+  <p>gotozeros &copy; 2024 &nbsp;|&nbsp; <a href="mailto:pass0585@gmail.com">문의하기</a></p>
+  <p style="margin-top:6px;">모든 이미지 처리는 브라우저 내에서 이루어지며 서버에 저장되지 않습니다.</p>
+</footer>
+
 </body>
 </html>
