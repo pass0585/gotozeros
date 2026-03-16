@@ -1,4 +1,4 @@
-const CACHE = 'gotozeros-v1';
+const CACHE = 'gotozeros-v3';
 const ASSETS = ['/', '/index.html', '/icon.svg', '/manifest.json'];
 
 self.addEventListener('install', e => {
